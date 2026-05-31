@@ -1,0 +1,368 @@
+/* =============================================================
+   SoundManager — Editor Theme
+   Unity 에디터 네이티브 룩 (flat / compact / titlebar)
+   가능한 곳은 Unity 내장 색상 변수(--unity-colors-*)를 사용하여
+   에디터 다크/라이트 테마에 자연스럽게 어울리게 합니다.
+   (변수가 없는 버전에서는 fallback 값 사용)
+   ============================================================= */
+
+:root {
+    --sm-bg:          var(--unity-colors-window-background, rgb(56, 56, 56));
+    --sm-toolbar:     var(--unity-colors-toolbar-background, rgb(60, 60, 60));
+    --sm-header:      var(--unity-colors-inspector_titlebar-background, rgb(62, 62, 62));
+    --sm-surface:     var(--unity-colors-default-background, rgb(56, 56, 56));
+    --sm-input:       var(--unity-colors-input_field-background, rgb(42, 42, 42));
+
+    --sm-border:      var(--unity-colors-default-border, rgb(35, 35, 35));
+    --sm-border-soft: rgb(48, 48, 48);
+
+    --sm-text:        var(--unity-colors-default-text, rgb(196, 196, 196));
+    --sm-text-dim:    rgb(150, 150, 150);
+    --sm-text-mute:   rgb(124, 124, 124);
+
+    --sm-accent:       var(--unity-colors-highlight-background, rgb(44, 93, 135));
+    --sm-accent-hover: var(--unity-colors-highlight-background-hover, rgb(50, 103, 150));
+    --sm-accent-text:  rgb(110, 170, 255);
+
+    --sm-btn:         var(--unity-colors-button-background, rgb(88, 88, 88));
+    --sm-btn-hover:   var(--unity-colors-button-background-hover, rgb(103, 103, 103));
+    --sm-btn-border:  var(--unity-colors-button-border, rgb(36, 36, 36));
+
+    --sm-helpbox:        var(--unity-colors-helpbox-background, rgb(50, 50, 50));
+    --sm-helpbox-border: var(--unity-colors-helpbox-border, rgb(35, 35, 35));
+
+    --sm-bgm:     rgb(168, 140, 224);
+    --sm-sfx:     rgb(214, 178, 94);
+    --sm-success: rgb(122, 192, 140);
+    --sm-danger:  rgb(214, 120, 120);
+}
+
+/* ── Root ──────────────────────────────────────────────────── */
+.sm-root {
+    flex-grow: 1;
+    background-color: var(--sm-bg);
+    color: var(--sm-text);
+    font-size: 12px;
+}
+.sm-inspector {
+    flex-shrink: 0;
+    color: var(--sm-text);
+    font-size: 12px;
+    padding-bottom: 8px;
+}
+
+/* ── Toolbar (Topbar) ──────────────────────────────────────── */
+.sm-topbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: 30px;
+    padding-left: 8px;
+    padding-right: 6px;
+    background-color: var(--sm-toolbar);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--sm-border);
+}
+.sm-topbar__brand { flex-direction: row; align-items: center; }
+.sm-topbar__logo {
+    font-size: 14px;
+    color: var(--sm-accent-text);
+    -unity-font-style: bold;
+    margin-right: 6px;
+}
+.sm-topbar__title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--sm-text);
+}
+.sm-topbar__actions { flex-direction: row; align-items: center; }
+
+/* ── Buttons (Unity 버튼 룩) ───────────────────────────────── */
+.sm-btn {
+    height: 21px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: 4px;
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: var(--sm-btn-border);
+    background-color: var(--sm-btn);
+    color: var(--sm-text);
+    font-size: 11px;
+    transition-duration: 0.08s;
+}
+.sm-btn:hover { background-color: var(--sm-btn-hover); }
+.sm-btn:active { background-color: var(--sm-accent); }
+
+.sm-btn--primary { color: var(--sm-accent-text); -unity-font-style: bold; }
+.sm-btn--ghost   { color: var(--sm-text-dim); }
+.sm-btn--ghost:hover { color: var(--sm-text); }
+
+.sm-iconbtn {
+    width: 24px;
+    padding-left: 0;
+    padding-right: 0;
+    -unity-text-align: middle-center;
+    font-size: 15px;
+}
+
+/* ── Tabs (Unity 툴바 탭) ──────────────────────────────────── */
+.sm-tabbar {
+    flex-direction: row;
+    background-color: var(--sm-toolbar);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--sm-border);
+}
+.sm-tab {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-right-width: 1px;
+    border-right-color: var(--sm-border);
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+    color: var(--sm-text-dim);
+    font-size: 12px;
+    border-radius: 0;
+}
+.sm-tab:hover { color: var(--sm-text); background-color: var(--sm-bg); }
+.sm-tab--active {
+    color: var(--sm-text);
+    background-color: var(--sm-bg);
+    border-bottom-color: var(--sm-accent-text);
+    -unity-font-style: bold;
+}
+
+/* ── Section (Unity 컴포넌트 타이틀바 룩) ──────────────────── */
+.sm-section {
+    background-color: var(--sm-surface);
+    border-width: 1px;
+    border-color: var(--sm-border);
+    border-radius: 3px;
+    margin-top: 6px;
+    margin-left: 6px;
+    margin-right: 6px;
+    padding-bottom: 6px;
+}
+.sm-section__header {
+    flex-direction: row;
+    align-items: center;
+    height: 22px;
+    padding-left: 8px;
+    padding-right: 8px;
+    background-color: var(--sm-header);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--sm-border);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    margin-bottom: 4px;
+}
+/* 카테고리 색 바 (얇은 좌측 인디케이터) */
+.sm-section__bar {
+    width: 2px;
+    height: 12px;
+    border-radius: 0;
+    background-color: var(--sm-accent-text);
+    margin-right: 7px;
+}
+.sm-section__bar--3d   { background-color: var(--sm-bgm); }
+.sm-section__bar--fade { background-color: var(--sm-sfx); }
+.sm-section__title {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--sm-text);
+}
+.sm-section__body { padding-left: 8px; padding-right: 8px; }
+
+/* ── Hint = Unity HelpBox 룩 ───────────────────────────────── */
+.sm-hint {
+    font-size: 10px;
+    color: var(--sm-text-mute);
+    white-space: normal;
+    background-color: var(--sm-helpbox);
+    border-width: 1px;
+    border-color: var(--sm-helpbox-border);
+    border-radius: 3px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 7px;
+    padding-right: 7px;
+    margin-top: 3px;
+    margin-bottom: 2px;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+/* ── Fields (Unity 내장 위젯) ──────────────────────────────── */
+.sm-section .unity-base-field { margin-top: 2px; margin-bottom: 2px; }
+.sm-section .unity-base-field__label {
+    color: var(--sm-text-dim);
+    -unity-font-style: normal;
+    min-width: 110px;
+    font-size: 11px;
+}
+.sm-section .unity-base-text-field__input,
+.sm-section .unity-base-popup-field__input,
+.sm-section .unity-object-field__input,
+.sm-section .unity-enum-field__input {
+    background-color: var(--sm-input);
+    border-color: var(--sm-border);
+    border-radius: 2px;
+    color: var(--sm-text);
+}
+.sm-section TextField:focus .unity-base-text-field__input {
+    border-color: var(--sm-accent-text);
+}
+.sm-section .unity-base-slider__dragger {
+    background-color: rgb(145, 145, 145);
+    border-color: var(--sm-border);
+    border-radius: 0;
+    width: 10px;
+}
+.sm-section .unity-base-slider__tracker {
+    background-color: var(--sm-input);
+    border-color: var(--sm-border);
+    border-radius: 0;
+}
+.sm-section .unity-toggle__label { color: var(--sm-text-dim); min-width: 110px; }
+
+/* ── Type Tag (납작한 라벨) ────────────────────────────────── */
+.sm-tag {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    padding-left: 7px;
+    padding-right: 7px;
+    border-radius: 2px;
+    border-width: 1px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+.sm-tag--bgm { background-color: rgba(168, 140, 224, 0.16); border-color: var(--sm-bgm); color: var(--sm-bgm); }
+.sm-tag--sfx { background-color: rgba(214, 178, 94, 0.16); border-color: var(--sm-sfx); color: var(--sm-sfx); }
+
+/* ── Inspector Name Header (Unity Inspector 타이틀바) ──────── */
+.sm-inspector__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: 28px;
+    padding-left: 8px;
+    padding-right: 8px;
+    background-color: var(--sm-header);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--sm-border);
+}
+.sm-inspector__name {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: var(--sm-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+/* ── List (Unity 트리뷰 행) ────────────────────────────────── */
+.sm-list { flex-grow: 1; }
+.sm-item {
+    flex-direction: row;
+    align-items: center;
+    height: 22px;
+    padding-left: 8px;
+    padding-right: 4px;
+    border-radius: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+.sm-item:hover { background-color: var(--sm-accent-hover); }
+.sm-item--active { background-color: var(--sm-accent); }
+.sm-item--active .sm-item__name { color: rgb(255, 255, 255); }
+.sm-item__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 4px;
+    background-color: var(--sm-text-mute);
+    margin-right: 8px;
+}
+.sm-item__name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--sm-text);
+    font-size: 12px;
+}
+.sm-item__delete {
+    width: 18px;
+    height: 18px;
+    padding-left: 0;
+    padding-right: 0;
+    border-radius: 2px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--sm-text-mute);
+    font-size: 11px;
+}
+.sm-item__delete:hover { background-color: var(--sm-danger); color: rgb(255, 255, 255); }
+
+/* ── Empty / Prompt ────────────────────────────────────────── */
+.sm-empty {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    padding-top: 30px;
+}
+.sm-empty__title { font-size: 13px; -unity-font-style: bold; color: var(--sm-text-dim); margin-bottom: 4px; }
+.sm-empty__body  { font-size: 11px; color: var(--sm-text-mute); white-space: normal; -unity-text-align: middle-center; }
+
+/* ── Preview Bar ───────────────────────────────────────────── */
+.sm-preview { padding-left: 8px; padding-right: 8px; }
+.sm-preview__row { flex-direction: row; justify-content: center; margin-top: 2px; margin-bottom: 6px; }
+.sm-preview__btn {
+    height: 24px;
+    width: 84px;
+    margin-left: 3px;
+    margin-right: 3px;
+    border-radius: 3px;
+    -unity-font-style: bold;
+    font-size: 11px;
+    border-width: 1px;
+    border-color: var(--sm-btn-border);
+    background-color: var(--sm-btn);
+}
+.sm-preview__btn:hover { background-color: var(--sm-btn-hover); }
+.sm-preview__btn--play  { color: var(--sm-success); }
+.sm-preview__btn--pause { color: var(--sm-text); }
+.sm-preview__btn--stop  { color: var(--sm-danger); }
+.sm-preview__btn:disabled { opacity: 0.45; }
+
+/* ── Settings 탭 ───────────────────────────────────────────── */
+.sm-settings { padding-top: 4px; }
+.sm-vol { flex-direction: row; align-items: center; margin-top: 4px; margin-bottom: 4px; }
+.sm-vol__label { min-width: 76px; color: var(--sm-text-dim); font-size: 11px; }
+.sm-vol__slider { flex-grow: 1; }
+.sm-vol__value { min-width: 40px; -unity-text-align: middle-right; color: var(--sm-text); -unity-font-style: bold; }
+
+.sm-row { flex-direction: row; align-items: center; }
+.sm-pathfield { flex-grow: 1; }
+
+/* 라벨이 없는 필드(볼륨 슬라이더 / 경로 입력 / 재생바)의 빈 라벨 영역 제거 */
+.sm-vol__slider .unity-base-field__label,
+.sm-pathfield .unity-base-field__label,
+#PlayBar .unity-base-field__label { display: none; min-width: 0; }
+#PlayBar { margin-top: 2px; margin-bottom: 4px; }
+.sm-toast {
+    font-size: 11px;
+    color: var(--sm-success);
+    -unity-font-style: bold;
+    margin-left: 8px;
+    margin-top: 3px;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.3s;
+}
+.sm-toast--show { opacity: 1; }

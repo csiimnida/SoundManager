@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48c32755cef4f784ab6582bd331841f7, type: 3}
+  m_Name: 8688f472-6e05-40eb-9ab8-e50e4e7bb872
+  m_EditorClassIdentifier: 
+  soundName: 8688f472-6e05-40eb-9ab8-e50e4e7bb872
+  soundType: 1
+  clip: {fileID: 0}
+  loop: 0
+  Priority: 128
+  volume: 1
+  pitch: 1
+  stereoPan: 0
+  SpatialBlend: 0
+  minDistance: 1
+  maxDistance: 500
+  RandomPitch: 0
+  MinPitch: 0.95
+  MaxPitch: 1.05
+  fadeIn: 0
+  fadeOut: 0
+  cooldown: 0
