@@ -123,6 +123,30 @@ namespace csiimnida.CSILib.SoundManager.Editor
         public static string GroupPool   => T("Audio Source Pool", "오디오 소스 풀");
         public static string GroupVolume => T("Default Volumes",   "기본 음량");
         public static string GroupData   => T("Data Folder",       "데이터 폴더");
+        public static string GroupSceneManager => T("Scene SoundManager", "씬 SoundManager");
+        public static string GroupMixerParams  => T("Mixer Exposed Parameters", "믹서 Exposed 파라미터");
+
+        public static string LabelSoundListSo => T("Sound List SO", "Sound List SO");
+        public static string LabelAudioMixer  => T("Audio Mixer", "Audio Mixer");
+        public static string LabelBgmGroup    => T("BGM Group", "BGM 그룹");
+        public static string LabelSfxGroup    => T("SFX Group", "SFX 그룹");
+        public static string LabelMasterParam => T("Master Volume Param", "마스터 음량 파라미터");
+        public static string LabelBgmParam    => T("BGM Volume Param", "BGM 음량 파라미터");
+        public static string LabelSfxParam    => T("SFX Volume Param", "SFX 음량 파라미터");
+
+        public static string SyncSoundListBtn     => T("Use Editor Sound List", "에디터 Sound List 적용");
+        public static string CreateSceneManagerBtn => T("Create SoundManager in Scene", "씬에 SoundManager 생성");
+        public static string SceneTargetLabel      => T("Editing", "편집 대상");
+
+        public static string HintSceneManager => T(
+            "Same fields as the SoundManager component in the scene. Required for Play Mode playback.",
+            "씬에 있는 SoundManager 컴포넌트와 동일한 설정입니다. Play Mode 재생에 필요합니다.");
+        public static string NoSceneManager => T(
+            "No SoundManager in loaded scenes. Create one or open a scene that contains it.",
+            "로드된 씬에 SoundManager가 없습니다. 생성하거나 해당 오브젝트가 있는 씬을 여세요.");
+        public static string MultipleSceneManagers => T(
+            "Multiple SoundManagers found. Settings apply to the first one; use Sync to update all Sound List SO references.",
+            "SoundManager가 여러 개 있습니다. 첫 번째만 편집되며, Sync로 Sound List SO는 모두 갱신할 수 있습니다.");
 
         public static string LabelPoolSize   => T("Pool Size",   "풀 크기");
         public static string LabelAutoExpand => T("Auto Expand", "자동 확장");
@@ -140,6 +164,65 @@ namespace csiimnida.CSILib.SoundManager.Editor
               "PlayerPrefs에 저장되어 런타임에 적용되는 기본 선형 음량입니다.");
         public static string SavedToast =>
             T("Settings saved.", "설정이 저장되었습니다.");
+
+        // ── 고급 설정 창 ──────────────────────────────────────────────
+        public static string AdvancedTitle   => T("Advanced Sound Settings", "고급 사운드 설정");
+        public static string AdvancedBtn     => T("Advanced Settings", "고급 설정");
+
+        public static string AdvResetBtn   => T("Reset to Default", "기본값으로 초기화");
+        public static string AdvCloseBtn   => T("Close", "닫기");
+
+        // 시작 지점
+        public static string AdvSectionStart   => T("Playback Start", "재생 시작 지점");
+        public static string AdvStartOffset    => T("Skip Intro (s)", "앞부분 건너뛰기 (초)");
+        public static string AdvRandomStart    => T("Random Start Position", "랜덤 시작 위치");
+        public static string AdvPlayFromStart  => T("Play from Start Point", "시작 지점부터 재생");
+        public static string AdvStartHint      => T(
+            "Drag the blue marker on the waveform, or type a value. Playback begins from here.\nTurn on Random Start to begin at a random spot each time.",
+            "파형 위의 파란 마커를 드래그하거나 값을 입력하세요. 재생이 이 지점부터 시작됩니다.\n'랜덤 시작 위치'를 켜면 매번 임의 지점에서 시작합니다.");
+
+        // 클립 배리에이션
+        public static string AdvSectionVariation => T("Clip Variations", "클립 배리에이션");
+        public static string AdvAddClip          => T("+ Add Clip", "+ 클립 추가");
+        public static string AdvVariationHint    => T(
+            "Each play picks a random clip from the main clip + this list. Great for footsteps, hits, gunshots.",
+            "재생할 때마다 기본 클립 + 아래 목록 중 하나를 무작위로 재생합니다. 발소리·타격음·총성 등에 좋습니다.");
+
+        // 동시 재생 (보이스)
+        public static string AdvSectionVoices  => T("Concurrent Playback", "동시 재생");
+        public static string AdvMaxVoices      => T("Max Voices (0 = unlimited)", "최대 동시 개수 (0 = 무제한)");
+        public static string AdvVoiceSteal     => T("When Limit Reached", "한도 도달 시");
+        public static string AdvStealSkip      => T("Skip new sound", "새 소리 무시");
+        public static string AdvStealOldest    => T("Stop the oldest", "가장 오래된 소리 끊기");
+        public static string AdvStealQuietest  => T("Stop the quietest", "가장 작은 소리 끊기");
+        public static string AdvVoicesHint     => T(
+            "Limits how many copies of this sound play at once, preventing noisy overlap and saving performance.",
+            "이 사운드가 동시에 몇 개까지 재생될지 제한합니다. 소리가 겹쳐 시끄러워지는 것과 성능 낭비를 막습니다.");
+
+        // 재생 지연
+        public static string AdvDelay        => T("Play Delay (s)", "재생 지연 (초)");
+        public static string AdvDelayTitle   => T("Play Delay", "재생 지연");
+        public static string AdvDelayHint    => T(
+            "Waits this many seconds after the play request before the sound is heard.",
+            "재생을 요청한 뒤 이 시간(초)만큼 기다렸다가 소리가 납니다.");
+
+        // 동작
+        public static string AdvSectionBehavior => T("Behavior", "동작");
+        public static string AdvIgnorePause     => T("Play While Game Paused", "일시정지 중에도 재생");
+        public static string AdvIgnorePauseHint => T(
+            "Keeps playing even when audio is paused (AudioListener.pause). Useful for UI/menu sounds.",
+            "오디오 일시정지(AudioListener.pause) 중에도 계속 재생됩니다. UI/메뉴 사운드에 유용합니다.");
+        public static string AdvPersist         => T("Keep Playing Across Scenes", "씬 전환에도 유지");
+        public static string AdvPersistHint     => T(
+            "Won't stop on scene change. Note: the SoundManager itself must survive the scene load (DontDestroyOnLoad).",
+            "씬이 바뀌어도 멈추지 않습니다. 단, SoundManager 오브젝트가 씬 전환 후에도 살아있어야 합니다(DontDestroyOnLoad).");
+
+        // 랜덤 음량
+        public static string AdvSectionVolume => T("Random Volume", "랜덤 음량");
+        public static string AdvRandomVolume  => T("Random Volume", "랜덤 음량");
+        public static string AdvVolumeHint    => T(
+            "Plays at a random volume between Min and Max each time. Adds natural variation.",
+            "재생할 때마다 Min~Max 사이의 무작위 음량으로 재생됩니다. 자연스러운 변화를 줍니다.");
 
         // ── 빈 상태 ──────────────────────────────────────────────────
         public static string EmptyListTitle =>

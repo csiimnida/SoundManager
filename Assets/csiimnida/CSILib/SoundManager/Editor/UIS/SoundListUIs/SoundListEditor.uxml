@@ -1,38 +1,24 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:VisualElement name="Container" class="sm-root">
-
-        <!-- Topbar -->
-        <ui:VisualElement name="Topbar" class="sm-topbar">
-            <ui:VisualElement class="sm-topbar__brand">
-                <ui:Label text="♪" class="sm-topbar__logo" />
-                <ui:Label text="SoundManager" name="TitleLable" class="sm-topbar__title" />
-            </ui:VisualElement>
-            <ui:VisualElement class="sm-topbar__actions">
-                <ui:Button text="Language" name="LenBtn" class="sm-btn sm-btn--ghost" />
-                <ui:Button text="+" name="CreateBtn" class="sm-btn sm-btn--primary sm-iconbtn" />
-            </ui:VisualElement>
+    <ui:VisualElement name="Container" style="flex-grow: 1;">
+        <ui:VisualElement name="Topbar" style="flex-direction: row; align-items: center; padding-left: 8px; padding-right: 8px; padding-top: 4px; padding-bottom: 4px;">
+            <ui:Label text="SoundManager" name="TitleLabel" style="flex-grow: 1; -unity-font-style: bold;" />
+            <ui:Button text="Language" name="LenBtn" tooltip="Toggle language" />
+            <ui:Button text="+" name="CreateBtn" tooltip="Create sound" />
         </ui:VisualElement>
-
-        <!-- Tabs -->
-        <ui:VisualElement name="TabBar" class="sm-tabbar">
-            <ui:Button text="Sounds" name="TabSounds" class="sm-tab sm-tab--active" />
-            <ui:Button text="Settings" name="TabSettings" class="sm-tab" />
+        <ui:VisualElement name="TabBar" style="flex-direction: row;">
+            <ui:Button text="Sounds" name="TabSounds" style="flex-grow: 1;" />
+            <ui:Button text="Settings" name="TabSettings" style="flex-grow: 1;" />
         </ui:VisualElement>
-
-        <!-- Sounds Tab -->
         <ui:VisualElement name="SoundsTab" style="flex-grow: 1;">
             <csiimnida.CSILib.SoundManager.Editor.SplitView fixed-pane-initial-dimension="260">
                 <ui:VisualElement name="LeftPanel" style="flex-grow: 1;">
-                    <ui:ScrollView name="ItemView" class="sm-list" />
+                    <ui:ScrollView name="ItemView" style="flex-grow: 1;" />
                 </ui:VisualElement>
                 <ui:VisualElement name="RightPanel" style="flex-grow: 1;">
                     <ui:ScrollView name="InspectorView" style="flex-grow: 1;" />
                 </ui:VisualElement>
             </csiimnida.CSILib.SoundManager.Editor.SplitView>
         </ui:VisualElement>
-
-        <!-- Settings Tab (코드에서 내용 생성) -->
-        <ui:ScrollView name="SettingsTab" class="sm-settings" style="flex-grow: 1; display: none;" />
-
+        <ui:ScrollView name="SettingsTab" style="flex-grow: 1; display: none;" />
     </ui:VisualElement>
 </ui:UXML>

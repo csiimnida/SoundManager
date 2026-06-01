@@ -1,115 +1,66 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:VisualElement name="InspectorRoot" class="sm-inspector">
-
-        <!-- 이름 헤더 -->
-        <ui:VisualElement name="Head" class="sm-inspector__head">
-            <ui:Label text="Sound Name" name="NameLabel" class="sm-inspector__name" />
-            <ui:Label text="SFX" name="TypeTag" class="sm-tag sm-tag--sfx" />
+    <ui:VisualElement name="InspectorRoot" style="flex-grow: 1; padding-left: 4px; padding-right: 4px; padding-top: 4px; padding-bottom: 4px;">
+        <ui:VisualElement name="Head" style="flex-direction: row; align-items: center; margin-bottom: 8px;">
+            <ui:Label text="Sound Name" name="NameLabel" style="flex-grow: 1; -unity-font-style: bold; font-size: 14px;" />
+            <ui:Label text="SFX" name="TypeTag" style="padding-left: 6px; padding-right: 6px;" />
         </ui:VisualElement>
 
-        <!-- 기본 설정 -->
-        <ui:VisualElement name="SectionBasic" class="sm-section">
-            <ui:VisualElement class="sm-section__header">
-                <ui:VisualElement class="sm-section__bar" />
-                <ui:Label text="Basic" name="SectionBasicTitle" class="sm-section__title" />
-            </ui:VisualElement>
-            <ui:VisualElement class="sm-section__body">
-                <ui:TextField label="Sound Name" placeholder-text="SoundName" is-delayed="true" name="SoundNameField" />
-                <ui:EnumField label="SoundType" value="SFX" type="csiimnida.CSILib.SoundManager.RunTime.SoundType, SoundManager.RunTime" name="SoundTypeField" binding-path="soundType" />
-                <uie:ObjectField label="Audio" name="AudioField" type="UnityEngine.AudioClip, UnityEngine.AudioModule" />
-                <ui:Toggle label="IsLoop" name="LoopField" binding-path="loop" />
-                <ui:SliderInt label="Priority" value="128" high-value="256" name="PriorityField" show-input-field="true" binding-path="Priority" />
-            </ui:VisualElement>
-            <ui:Label text="0 = most important, 256 = least important. Default = 128." name="PriorityHint" class="sm-hint" />
+        <ui:Button text="Advanced Settings" name="AdvancedSettingsBt" style="margin-bottom: 6px; height: 24px;" />
+
+        <ui:Label text="Basic" name="SectionBasicTitle" style="-unity-font-style: bold; margin-top: 4px; margin-bottom: 4px;" />
+        <ui:TextField label="Sound Name" placeholder-text="SoundName" is-delayed="true" name="SoundNameField" />
+        <ui:EnumField label="SoundType" value="SFX" type="csiimnida.CSILib.SoundManager.RunTime.SoundType, SoundManager.RunTime" name="SoundTypeField" binding-path="soundType" />
+        <uie:ObjectField label="Audio" name="AudioField" type="UnityEngine.AudioClip, UnityEngine.AudioModule" />
+        <ui:Toggle label="IsLoop" name="LoopField" binding-path="loop" />
+        <ui:SliderInt label="Priority" value="128" high-value="256" name="PriorityField" show-input-field="true" binding-path="Priority" />
+        <ui:Label text="0 = most important, 256 = least important. Default = 128." name="PriorityHint" style="font-size: 11px; white-space: normal; margin-bottom: 6px;" />
+
+        <ui:Label text="Audio" name="SectionAudioTitle" style="-unity-font-style: bold; margin-top: 8px; margin-bottom: 4px;" />
+        <ui:Slider label="Volume" value="1" high-value="1" name="VolumeField" show-input-field="true" binding-path="volume" />
+        <ui:Slider label="Pitch" value="1" high-value="3" low-value="-3" name="PitchField" show-input-field="true" binding-path="pitch" />
+        <ui:Slider label="StereoPan" value="0" high-value="1" low-value="-1" name="SoundPosField" show-input-field="true" binding-path="stereoPan" />
+        <ui:Label text="Sets the position in the stereo field of 2D sounds." name="StereoPanHint" style="font-size: 11px; white-space: normal; margin-bottom: 4px;" />
+        <ui:Slider label="SpatialBlend" value="0" high-value="1" name="SpatialBlendField" show-input-field="true" binding-path="SpatialBlend" />
+        <ui:Label text="Sets how much the 3D engine has an effect on the audio source." name="SpatialBlendHint" style="font-size: 11px; white-space: normal; margin-bottom: 6px;" />
+
+        <ui:VisualElement name="Section3D" style="display: none;">
+            <ui:Label text="3D Settings" name="Section3DTitle" style="-unity-font-style: bold; margin-top: 8px; margin-bottom: 4px;" />
+            <ui:FloatField label="Min Distance" value="1" name="MinDistanceField" binding-path="minDistance" />
+            <ui:FloatField label="Max Distance" value="500" name="MaxDistanceField" binding-path="maxDistance" />
+            <ui:Label text="Distance range used when SpatialBlend is greater than 0." name="Hint3D" style="font-size: 11px; white-space: normal; margin-bottom: 6px;" />
         </ui:VisualElement>
 
-        <!-- 오디오 설정 -->
-        <ui:VisualElement name="SectionAudio" class="sm-section">
-            <ui:VisualElement class="sm-section__header">
-                <ui:VisualElement class="sm-section__bar" />
-                <ui:Label text="Audio" name="SectionAudioTitle" class="sm-section__title" />
+        <ui:Label text="Random Pitch" name="SectionRandomTitle" style="-unity-font-style: bold; margin-top: 8px; margin-bottom: 4px;" />
+        <ui:Toggle label="Random Pitch" name="RendomPitchBt" binding-path="RandomPitch" />
+        <ui:VisualElement name="RandPichValue" style="padding-left: 10px; padding-right: 10px; margin-top: 2px; flex-direction: row; align-items: center;">
+            <ui:FloatField label="Min" value="0.95" is-delayed="true" name="PitchMinInput" style="width: 110px; min-width: 110px; margin-right: 6px;" />
+            <ui:VisualElement name="PitchSliderContainer" style="flex-grow: 1; min-width: 0; position: relative; padding-top: 2px; padding-bottom: 2px;">
+                <ui:MinMaxSlider name="PitchRangeSlider" low-limit="-3" high-limit="3" min-value="0.95" max-value="1.05" />
+                <ui:VisualElement name="PitchCenterMarker" style="position: absolute; left: 66.6667%; top: 4px; bottom: 4px; width: 2px; background-color: rgba(230, 230, 230, 0.75);" />
             </ui:VisualElement>
-            <ui:VisualElement class="sm-section__body">
-                <ui:Slider label="Volume" value="1" high-value="1" name="VolumeField" show-input-field="true" binding-path="volume" />
-                <ui:Slider label="Pitch" value="1" high-value="3" low-value="-3" name="PitchField" show-input-field="true" binding-path="pitch" />
-                <ui:Slider label="StereoPan" value="0" high-value="1" low-value="-1" name="SoundPosField" show-input-field="true" binding-path="stereoPan" />
-            </ui:VisualElement>
-            <ui:Label text="Sets the position in the stereo field of 2D sounds." name="StereoPanHint" class="sm-hint" />
-            <ui:VisualElement class="sm-section__body">
-                <ui:Slider label="SpatialBlend" value="0" high-value="1" name="SpatialBlendField" show-input-field="true" binding-path="SpatialBlend" />
-            </ui:VisualElement>
-            <ui:Label text="Sets how much the 3D engine has an effect on the audio source." name="SpatialBlendHint" class="sm-hint" />
+            <ui:FloatField label="Max" value="1.05" is-delayed="true" name="PitchMaxInput" style="width: 110px; min-width: 110px; margin-left: 6px;" />
+        </ui:VisualElement>
+        <ui:VisualElement style="padding-left: 10px; padding-right: 10px;">
+            <ui:Label text="Min 0.95 / Max 1.05" name="PitchRangeValueLabel" style="font-size: 11px; color: rgb(175, 175, 175); margin-top: 2px;" />
         </ui:VisualElement>
 
-        <!-- 3D 설정 (SpatialBlend > 0 일 때만 표시) -->
-        <ui:VisualElement name="Section3D" class="sm-section" style="display: none;">
-            <ui:VisualElement class="sm-section__header">
-                <ui:VisualElement class="sm-section__bar sm-section__bar--3d" />
-                <ui:Label text="3D Settings" name="Section3DTitle" class="sm-section__title" />
-            </ui:VisualElement>
-            <ui:VisualElement class="sm-section__body">
-                <ui:FloatField label="Min Distance" value="1" name="MinDistanceField" binding-path="minDistance" />
-                <ui:FloatField label="Max Distance" value="500" name="MaxDistanceField" binding-path="maxDistance" />
-            </ui:VisualElement>
-            <ui:Label text="Distance range used when SpatialBlend is greater than 0." name="Hint3D" class="sm-hint" />
-        </ui:VisualElement>
+        <ui:Label text="Fade" name="SectionFadeTitle" style="-unity-font-style: bold; margin-top: 8px; margin-bottom: 4px;" />
+        <ui:FloatField label="Fade In (s)" value="0" name="FadeInField" binding-path="fadeIn" />
+        <ui:FloatField label="Fade Out (s)" value="0" name="FadeOutField" binding-path="fadeOut" />
+        <ui:Label text="Time to ramp volume in/out. 0 means instant." name="FadeHint" style="font-size: 11px; white-space: normal; margin-bottom: 6px;" />
 
-        <!-- 랜덤 피치 -->
-        <ui:VisualElement name="SectionRandom" class="sm-section">
-            <ui:VisualElement class="sm-section__header">
-                <ui:VisualElement class="sm-section__bar" />
-                <ui:Label text="Random Pitch" name="SectionRandomTitle" class="sm-section__title" />
-            </ui:VisualElement>
-            <ui:VisualElement class="sm-section__body">
-                <ui:Toggle label="Random Pitch" name="RendomPitchBt" binding-path="RandomPitch" />
-                <ui:VisualElement name="RandPichValue" style="flex-direction: row; justify-content: space-around; padding-left: 10px; padding-right: 10px;">
-                    <ui:FloatField label="Min" value="0.95" is-delayed="true" name="MinValue" style="flex-grow: 1; margin-right: 6px;" />
-                    <ui:FloatField label="Max" value="1.05" is-delayed="true" name="MaxValue" style="flex-grow: 1;" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-        </ui:VisualElement>
+        <ui:Label text="Cooldown" name="SectionCooldownTitle" style="-unity-font-style: bold; margin-top: 8px; margin-bottom: 4px;" />
+        <ui:FloatField label="Cooldown (s)" value="0" name="CooldownField" binding-path="cooldown" />
+        <ui:Label text="Minimum interval before the same sound can replay. 0 means no limit." name="CooldownHint" style="font-size: 11px; white-space: normal; margin-bottom: 6px;" />
 
-        <!-- 페이드 -->
-        <ui:VisualElement name="SectionFade" class="sm-section">
-            <ui:VisualElement class="sm-section__header">
-                <ui:VisualElement class="sm-section__bar sm-section__bar--fade" />
-                <ui:Label text="Fade" name="SectionFadeTitle" class="sm-section__title" />
-            </ui:VisualElement>
-            <ui:VisualElement class="sm-section__body">
-                <ui:FloatField label="Fade In (s)" value="0" name="FadeInField" binding-path="fadeIn" />
-                <ui:FloatField label="Fade Out (s)" value="0" name="FadeOutField" binding-path="fadeOut" />
-            </ui:VisualElement>
-            <ui:Label text="Time to ramp volume in/out. 0 means instant." name="FadeHint" class="sm-hint" />
+        <ui:Label text="Preview" name="PreviewLabel" style="-unity-font-style: bold; margin-top: 8px; margin-bottom: 4px;" />
+        <ui:VisualElement style="flex-direction: row; margin-bottom: 4px;">
+            <ui:Button text="Play" name="PlayBt" style="flex-grow: 1; margin-right: 4px;" />
+            <ui:Button text="Pause" name="PushBt" style="flex-grow: 1; margin-right: 4px;" />
+            <ui:Button text="Stop" name="StopBt" style="flex-grow: 1;" />
         </ui:VisualElement>
-
-        <!-- 쿨다운 -->
-        <ui:VisualElement name="SectionCooldown" class="sm-section">
-            <ui:VisualElement class="sm-section__header">
-                <ui:VisualElement class="sm-section__bar sm-section__bar--fade" />
-                <ui:Label text="Cooldown" name="SectionCooldownTitle" class="sm-section__title" />
-            </ui:VisualElement>
-            <ui:VisualElement class="sm-section__body">
-                <ui:FloatField label="Cooldown (s)" value="0" name="CooldownField" binding-path="cooldown" />
-            </ui:VisualElement>
-            <ui:Label text="Minimum interval before the same sound can replay. 0 means no limit." name="CooldownHint" class="sm-hint" />
+        <ui:VisualElement name="PreviewBarPanel" style="padding-top: 6px; padding-right: 8px; padding-bottom: 6px; padding-left: 8px; border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px; background-color: rgba(28, 28, 28, 0.55);">
+            <ui:Slider high-value="1" name="PlayBar" show-input-field="false" fill="true" style="height: 16px;" />
         </ui:VisualElement>
-
-        <!-- 미리듣기 -->
-        <ui:VisualElement name="SectionPreview" class="sm-section">
-            <ui:VisualElement class="sm-section__header">
-                <ui:VisualElement class="sm-section__bar" />
-                <ui:Label text="Preview" name="PreviewLabel" class="sm-section__title" />
-            </ui:VisualElement>
-            <ui:VisualElement class="sm-preview">
-                <ui:VisualElement class="sm-preview__row">
-                    <ui:Button text="Play" name="PlayBt" class="sm-preview__btn sm-preview__btn--play" />
-                    <ui:Button text="Pause" name="PushBt" class="sm-preview__btn sm-preview__btn--pause" />
-                    <ui:Button text="Stop" name="StopBt" class="sm-preview__btn sm-preview__btn--stop" />
-                </ui:VisualElement>
-                <ui:Slider high-value="1" name="PlayBar" show-input-field="false" fill="false" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-
-        <ui:VisualElement style="height: 10px;" />
     </ui:VisualElement>
 </ui:UXML>

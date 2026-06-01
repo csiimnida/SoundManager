@@ -2,7 +2,8 @@
     "name": "SoundManager.editor",
     "rootNamespace": "",
     "references": [
-        "GUID:1f346252476973543b7852c75293428b"
+        "GUID:1f346252476973543b7852c75293428b",
+        "GUID:1a9c6e6c0c47d5f469df06ba2075bab9"
     ],
     "includePlatforms": [
         "Editor"

@@ -21,6 +21,22 @@ MonoBehaviour:
   pitch: 1
   stereoPan: 0
   SpatialBlend: 0
+  minDistance: 1
+  maxDistance: 500
   RandomPitch: 0
   MinPitch: 0.95
   MaxPitch: 1.05
+  fadeIn: 0
+  fadeOut: 0
+  cooldown: 0
+  startOffset: 0
+  randomStartPosition: 0
+  clipVariations: []
+  maxVoices: 0
+  voiceSteal: 0
+  playDelay: 0
+  ignoreListenerPause: 0
+  persistAcrossScenes: 0
+  RandomVolume: 0
+  MinVolume: 0.9
+  MaxVolume: 1

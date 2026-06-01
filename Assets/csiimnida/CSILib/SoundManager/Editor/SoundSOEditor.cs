@@ -14,7 +14,6 @@ namespace csiimnida.CSILib.SoundManager.Editor
     public class SoundSOEditor : UnityEditor.Editor
     {
         private VisualTreeAsset visualTreeAsset;
-        private StyleSheet themeStyle;
 
         private Label nameLabel;
         private Label typeTag;
@@ -26,9 +25,14 @@ namespace csiimnida.CSILib.SoundManager.Editor
         private ObjectField audioClipField;
 
         private Toggle randPitchToggle;
-        private FloatField minPitchField, maxPitchField;
-        private Slider pitchSlider, spatialBlendSlider;
+        private MinMaxSlider pitchRangeSlider;
+        private FloatField pitchMinInput;
+        private FloatField pitchMaxInput;
+        private VisualElement pitchCenterMarker;
+        private Label pitchRangeValueLabel;
+        private Slider pitchSlider, spatialBlendSlider, volumeSlider;
         private VisualElement section3D;
+        private bool _suppressPitchRangeEvents;
 
         private bool _isPlaying;
         private bool _isPaused;
@@ -45,7 +49,6 @@ namespace csiimnida.CSILib.SoundManager.Editor
             InitializeWindow();
 
             VisualElement root = new VisualElement();
-            if (themeStyle != null) root.styleSheets.Add(themeStyle);
             visualTreeAsset.CloneTree(root);
 
             SetValue(root);
@@ -87,8 +90,8 @@ namespace csiimnida.CSILib.SoundManager.Editor
             root.Q<FloatField>("MaxDistanceField").label= L10n.LabelMaxDistance;
             root.Q<Label>("Hint3D").text                = L10n.Hint3D;
             root.Q<Toggle>("RendomPitchBt").label       = L10n.LabelRandomPitch;
-            root.Q<FloatField>("MinValue").label        = L10n.LabelMin;
-            root.Q<FloatField>("MaxValue").label        = L10n.LabelMax;
+            root.Q<FloatField>("PitchMinInput").label   = L10n.LabelMin;
+            root.Q<FloatField>("PitchMaxInput").label   = L10n.LabelMax;
             root.Q<FloatField>("FadeInField").label     = L10n.LabelFadeIn;
             root.Q<FloatField>("FadeOutField").label    = L10n.LabelFadeOut;
             root.Q<Label>("FadeHint").text              = L10n.HintFade;
@@ -98,6 +101,9 @@ namespace csiimnida.CSILib.SoundManager.Editor
             root.Q<Button>("PlayBt").text  = L10n.Play;
             root.Q<Button>("PushBt").text  = L10n.Pause;
             root.Q<Button>("StopBt").text  = L10n.Stop;
+
+            var advBtn = root.Q<Button>("AdvancedSettingsBt");
+            if (advBtn != null) advBtn.text = "\u2699 " + L10n.AdvancedBtn;
         }
 
         // ── 값 초기화 ───────────────────────────────────────────────
@@ -120,13 +126,33 @@ namespace csiimnida.CSILib.SoundManager.Editor
             audioClipField.value = soundcs.clip;
 
             randPitchToggle    = root.Q<Toggle>("RendomPitchBt");
-            minPitchField      = root.Q<FloatField>("MinValue");
-            maxPitchField      = root.Q<FloatField>("MaxValue");
+            pitchRangeSlider   = root.Q<MinMaxSlider>("PitchRangeSlider");
+            pitchMinInput      = root.Q<FloatField>("PitchMinInput");
+            pitchMaxInput      = root.Q<FloatField>("PitchMaxInput");
+            pitchCenterMarker  = root.Q<VisualElement>("PitchCenterMarker");
+            pitchRangeValueLabel = root.Q<Label>("PitchRangeValueLabel");
             pitchSlider        = root.Q<Slider>("PitchField");
             spatialBlendSlider = root.Q<Slider>("SpatialBlendField");
+            volumeSlider       = root.Q<Slider>("VolumeField");
+            if (volumeSlider != null)
+                volumeSlider.SetEnabled(!soundcs.RandomVolume);
             section3D          = root.Q<VisualElement>("Section3D");
             playSlider         = root.Q<Slider>("PlayBar");
             playButton         = root.Q<Button>("PlayBt");
+
+            if (pitchRangeSlider != null)
+            {
+                pitchRangeSlider.lowLimit = -3f;
+                pitchRangeSlider.highLimit = 3f;
+                pitchRangeSlider.SetValueWithoutNotify(new Vector2(soundcs.MinPitch, soundcs.MaxPitch));
+            }
+            if (pitchCenterMarker != null)
+            {
+                pitchCenterMarker.style.left = Length.Percent(GetCenterMarkerPercent());
+                pitchCenterMarker.pickingMode = PickingMode.Ignore;
+            }
+
+            ApplyPitchRange(soundcs.MinPitch, soundcs.MaxPitch, save: false);
         }
 
         // ── 이벤트 등록 ─────────────────────────────────────────────
@@ -137,8 +163,9 @@ namespace csiimnida.CSILib.SoundManager.Editor
             nameField.RegisterValueChangedCallback(HandleAssetNameChange);
             audioClipField.RegisterValueChangedCallback(HandleAudioChange);
             randPitchToggle.RegisterValueChangedCallback(HandleChangeRandPitchValue);
-            minPitchField.RegisterValueChangedCallback(HandleChangeMinValue);
-            maxPitchField.RegisterValueChangedCallback(HandleChangeMaxValue);
+            pitchRangeSlider?.RegisterValueChangedCallback(HandleChangePitchRange);
+            pitchMinInput?.RegisterValueChangedCallback(HandleChangePitchMinInput);
+            pitchMaxInput?.RegisterValueChangedCallback(HandleChangePitchMaxInput);
             typeField.RegisterValueChangedCallback(evt => SetTypeTag((SoundType)evt.newValue));
             spatialBlendSlider.RegisterValueChangedCallback(evt => Set3DSectionVisible(evt.newValue > 0f));
 
@@ -147,16 +174,17 @@ namespace csiimnida.CSILib.SoundManager.Editor
             pushButton.SetEnabled(false);
 
             stopButton = root.Q<Button>("StopBt");
-            stopButton.clicked += () => { EditorAudioUtil.Stop(); EndSound(); };
+            stopButton.clicked += () => { SoundPreviewPlayer.Stop(); EndSound(); };
             stopButton.SetEnabled(false);
 
-            minPitchField.value = soundcs.MinPitch;
-            maxPitchField.value = soundcs.MaxPitch;
+            var advBtn = root.Q<Button>("AdvancedSettingsBt");
+            if (advBtn != null) advBtn.clicked += () => SoundAdvancedSettingsWindow.Open(soundcs);
 
             bool randOn = soundcs.RandomPitch;
             pitchSlider.SetEnabled(!randOn);
-            minPitchField.SetEnabled(randOn);
-            maxPitchField.SetEnabled(randOn);
+            if (pitchRangeSlider != null) pitchRangeSlider.SetEnabled(randOn);
+            if (pitchMinInput != null) pitchMinInput.SetEnabled(randOn);
+            if (pitchMaxInput != null) pitchMaxInput.SetEnabled(randOn);
         }
 
         // ── 타입 태그 / 3D 섹션 ─────────────────────────────────────
@@ -168,8 +196,9 @@ namespace csiimnida.CSILib.SoundManager.Editor
             if (typeTag == null) return;
             bool isBgm = type == SoundType.BGM;
             typeTag.text = isBgm ? "BGM" : "SFX";
-            typeTag.EnableInClassList("sm-tag--bgm", isBgm);
-            typeTag.EnableInClassList("sm-tag--sfx", !isBgm);
+            typeTag.style.backgroundColor = isBgm
+                ? new Color(0.72f, 0.58f, 0.96f, 0.35f)
+                : new Color(0.96f, 0.77f, 0.33f, 0.35f);
         }
 
         private void Refresh3DSection() => Set3DSectionVisible(soundcs.SpatialBlend > 0f);
@@ -180,7 +209,7 @@ namespace csiimnida.CSILib.SoundManager.Editor
             section3D.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        // ── 재생 제어 (EditorAudioUtil) ─────────────────────────────
+        // ── 재생 제어 (SoundPreviewPlayer) ──────────────────────────
 
         private void HandlePlayButton()
         {
@@ -190,9 +219,9 @@ namespace csiimnida.CSILib.SoundManager.Editor
                 return;
             }
 
-            EditorAudioUtil.Stop();
+            SoundPreviewPlayer.Stop();
             _previewClip = soundcs.clip;
-            EditorAudioUtil.Play(_previewClip, loop: soundcs.loop);
+            SoundPreviewPlayer.Play(soundcs);
 
             _isPlaying = true;
             _isPaused  = false;
@@ -207,14 +236,14 @@ namespace csiimnida.CSILib.SoundManager.Editor
 
             if (_isPlaying)
             {
-                EditorAudioUtil.Pause();
+                SoundPreviewPlayer.Pause();
                 _isPlaying = false;
                 _isPaused  = true;
                 pushButton.text = L10n.Resume;
             }
             else
             {
-                EditorAudioUtil.Resume();
+                SoundPreviewPlayer.Resume();
                 _isPlaying = true;
                 _isPaused  = false;
                 pushButton.text = L10n.Pause;
@@ -223,17 +252,21 @@ namespace csiimnida.CSILib.SoundManager.Editor
 
         private void Update()
         {
+            // 랜덤 음량이 켜져 있으면 일반 음량 슬라이더를 비활성화 (고급 설정 창에서 바뀌어도 즉시 반영)
+            if (volumeSlider != null && soundcs != null)
+                volumeSlider.SetEnabled(!soundcs.RandomVolume);
+
             if (!_isPlaying || _previewClip == null) return;
 
-            if (!EditorAudioUtil.IsPlaying() && !soundcs.loop)
+            if (!SoundPreviewPlayer.IsPlaying() && !soundcs.loop)
             {
                 EndSound();
                 return;
             }
 
-            float len = _previewClip.length;
+            float len = SoundPreviewPlayer.CurrentClipLength;
             if (len > 0f && playSlider != null)
-                playSlider.value = Mathf.Clamp01(EditorAudioUtil.GetPosition() / len);
+                playSlider.value = Mathf.Clamp01(SoundPreviewPlayer.GetPosition() / len);
         }
 
         private void EndSound()
@@ -249,7 +282,7 @@ namespace csiimnida.CSILib.SoundManager.Editor
         public void ResetSound()
         {
             EditorApplication.update -= Update;
-            EditorAudioUtil.Stop();
+            SoundPreviewPlayer.Stop();
             _isPlaying = false;
             _isPaused  = false;
         }
@@ -274,53 +307,66 @@ namespace csiimnida.CSILib.SoundManager.Editor
         private void HandleChangeRandPitchValue(ChangeEvent<bool> evt)
         {
             pitchSlider.SetEnabled(!evt.newValue);
-            minPitchField.SetEnabled(evt.newValue);
-            maxPitchField.SetEnabled(evt.newValue);
+            if (pitchRangeSlider != null) pitchRangeSlider.SetEnabled(evt.newValue);
+            if (pitchMinInput != null) pitchMinInput.SetEnabled(evt.newValue);
+            if (pitchMaxInput != null) pitchMaxInput.SetEnabled(evt.newValue);
             soundcs.RandomPitch = evt.newValue;
             EditorUtility.SetDirty(soundcs);
             AssetDatabase.SaveAssets();
         }
 
-        private void HandleChangeMinValue(ChangeEvent<float> evt)
+        private void HandleChangePitchRange(ChangeEvent<Vector2> evt)
         {
-            if (!soundcs.RandomPitch) return;
+            if (_suppressPitchRangeEvents || !soundcs.RandomPitch) return;
+            ApplyPitchRange(evt.newValue.x, evt.newValue.y, save: true);
+        }
 
-            if (evt.newValue < -3f)
-            {
-                ShowWarning(L10n.PitchMinBelowNeg3);
-                (evt.target as FloatField)?.SetValueWithoutNotify(-3f);
-                return;
-            }
-            if (evt.newValue > soundcs.MaxPitch)
-            {
-                ShowWarning(L10n.PitchMinAboveMax);
-                (evt.target as FloatField)?.SetValueWithoutNotify(evt.previousValue);
-                return;
-            }
-            soundcs.MinPitch = evt.newValue;
+        private void HandleChangePitchMinInput(ChangeEvent<float> evt)
+        {
+            if (_suppressPitchRangeEvents || !soundcs.RandomPitch) return;
+            ApplyPitchRange(evt.newValue, soundcs.MaxPitch, save: true);
+        }
+
+        private void HandleChangePitchMaxInput(ChangeEvent<float> evt)
+        {
+            if (_suppressPitchRangeEvents || !soundcs.RandomPitch) return;
+            ApplyPitchRange(soundcs.MinPitch, evt.newValue, save: true);
+        }
+
+        private void ApplyPitchRange(float min, float max, bool save)
+        {
+            min = Mathf.Clamp(min, -3f, 3f);
+            max = Mathf.Clamp(max, -3f, 3f);
+            if (min > max) (min, max) = (max, min);
+
+            _suppressPitchRangeEvents = true;
+            if (pitchRangeSlider != null)
+                pitchRangeSlider.SetValueWithoutNotify(new Vector2(min, max));
+            pitchMinInput?.SetValueWithoutNotify(min);
+            pitchMaxInput?.SetValueWithoutNotify(max);
+            _suppressPitchRangeEvents = false;
+
+            soundcs.MinPitch = min;
+            soundcs.MaxPitch = max;
+            UpdatePitchRangeLabel(min, max);
+
+            if (!save) return;
             EditorUtility.SetDirty(soundcs);
             AssetDatabase.SaveAssets();
         }
 
-        private void HandleChangeMaxValue(ChangeEvent<float> evt)
+        private static float GetCenterMarkerPercent()
         {
-            if (!soundcs.RandomPitch) return;
+            const float low = -3f;
+            const float high = 3f;
+            const float centerValue = 1f;
+            return Mathf.Clamp01((centerValue - low) / (high - low)) * 100f;
+        }
 
-            if (evt.newValue > 3f)
-            {
-                ShowWarning(L10n.PitchMaxAbove3);
-                (evt.target as FloatField)?.SetValueWithoutNotify(3f);
-                return;
-            }
-            if (evt.newValue < soundcs.MinPitch)
-            {
-                ShowWarning(L10n.PitchMaxBelowMin);
-                (evt.target as FloatField)?.SetValueWithoutNotify(evt.previousValue);
-                return;
-            }
-            soundcs.MaxPitch = evt.newValue;
-            EditorUtility.SetDirty(soundcs);
-            AssetDatabase.SaveAssets();
+        private void UpdatePitchRangeLabel(float min, float max)
+        {
+            if (pitchRangeValueLabel == null) return;
+            pitchRangeValueLabel.text = $"{L10n.LabelMin} {min:0.00} / {L10n.LabelMax} {max:0.00}";
         }
 
         private void HandleAssetNameChange(ChangeEvent<string> evt)
@@ -362,9 +408,6 @@ namespace csiimnida.CSILib.SoundManager.Editor
             string uxmlPath = $"{_rootFolderPath}/Editor/UIS/SoundSO_en_vr.uxml";
             visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(uxmlPath);
             Debug.Assert(visualTreeAsset != null, $"Visual tree asset is null: {uxmlPath}");
-
-            string themePath = $"{_rootFolderPath}/Editor/UIS/SoundManagerTheme.uss";
-            themeStyle = AssetDatabase.LoadAssetAtPath<StyleSheet>(themePath);
         }
     }
 }

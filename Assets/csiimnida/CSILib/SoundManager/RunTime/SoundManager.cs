@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
+using csiimnida.CSILib.MonoSingleton.RunTime;
 using Random = UnityEngine.Random;
 
 namespace csiimnida.CSILib.SoundManager.RunTime
@@ -29,6 +31,9 @@ namespace csiimnida.CSILib.SoundManager.RunTime
             public Transform Follow;
             public float TargetVolume;
             public bool Started;          // 실제 재생 시작을 확인했는지
+
+            public string SoundName;      // 보이스 제한/스틸 집계용
+            public bool Persist;          // 씬 전환에도 유지할지
 
             public int Id;                // 핸들 세대 검증용 (재사용 시 0 으로 무효화)
             public int Index;             // _active 내 위치 (swap-remove 용)
@@ -63,9 +68,12 @@ namespace csiimnida.CSILib.SoundManager.RunTime
         // ════════════════════════════════════════════════════════════
         // 초기화
         // ════════════════════════════════════════════════════════════
-        private void Awake()
+        protected override void Awake()
         {
-            Debug.Assert(soundListSo != null, "[SoundManager] SoundListSo asset is null");
+            base.Awake();
+
+            if (soundListSo == null)
+                Debug.LogWarning("[SoundManager] SoundListSo가 할당되지 않았습니다. Inspector에서 SoundListSO 에셋을 지정하세요.");
             if (mixer == null)
                 Debug.LogWarning("[SoundManager] AudioMixer가 할당되지 않았습니다. 믹서 라우팅 없이 동작합니다.");
 
@@ -79,6 +87,35 @@ namespace csiimnida.CSILib.SoundManager.RunTime
                 _pool.Enqueue(CreatePooledSource());
 
             LoadVolumes();
+
+            // 씬 전환에도 유지(D-⑨) 처리를 위한 훅
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+        }
+
+        // 씬이 바뀌면 'persistAcrossScenes' 가 아닌 재생 중인 사운드를 정지합니다.
+        // (SoundManager 자체가 DontDestroyOnLoad 로 살아있을 때 의미가 있습니다.)
+        private void OnActiveSceneChanged(Scene from, Scene to)
+        {
+            for (int i = _active.Count - 1; i >= 0; i--)
+            {
+                ActiveSound e = _active[i];
+                if (e.Source == null)
+                {
+                    RemoveActiveAt(i);
+                    continue;
+                }
+                if (!e.Persist)
+                    FinishActive(e);
+            }
+
+            if (_currentBGM != null && !_currentBGM.IsValid)
+                _currentBGM = null;
         }
 
         private AudioSource CreatePooledSource()
@@ -109,7 +146,7 @@ namespace csiimnida.CSILib.SoundManager.RunTime
         {
             if (soundListSo == null || soundListSo.SoundsDictionary == null)
             {
-                Debug.LogError("[SoundManager] SoundListSo 가 준비되지 않았습니다.");
+                Debug.LogWarning("[SoundManager] SoundListSo 가 준비되지 않았습니다.");
                 return null;
             }
 
@@ -119,7 +156,9 @@ namespace csiimnida.CSILib.SoundManager.RunTime
                 return null;
             }
 
-            if (so.clip == null)
+            // 배리에이션을 고려해 실제 재생할 클립 선택
+            AudioClip chosenClip = so.PickClip();
+            if (chosenClip == null)
             {
                 Debug.LogError($"[SoundManager] '{soundName}'의 AudioClip이 null입니다.");
                 return null;
@@ -134,6 +173,10 @@ namespace csiimnida.CSILib.SoundManager.RunTime
                     return null;
                 _lastPlayTime[soundName] = now;
             }
+
+            // 동시 재생 제한 / 보이스 스틸
+            if (so.maxVoices > 0 && !TryMakeRoomForVoice(soundName, so))
+                return null;
 
             AudioSource source = GetSource();
             if (source == null) return null;
@@ -155,7 +198,7 @@ namespace csiimnida.CSILib.SoundManager.RunTime
             if (is3D)
                 tr.position = position;
 
-            float targetVolume = ApplySettings(source, so, is3D);
+            float targetVolume = ApplySettings(source, so, is3D, chosenClip);
 
             // 엔트리/핸들 구성
             int id = _nextId++;
@@ -168,6 +211,8 @@ namespace csiimnida.CSILib.SoundManager.RunTime
             entry.Follow       = follow;
             entry.TargetVolume = targetVolume;
             entry.Started      = false;
+            entry.SoundName    = soundName;
+            entry.Persist      = so.persistAcrossScenes;
             entry.Id           = id;
             entry.FadingIn = false;  entry.FadeInTimer = 0f;
             entry.FadingOut = false; entry.FadeOutTimer = 0f;
@@ -185,15 +230,21 @@ namespace csiimnida.CSILib.SoundManager.RunTime
             }
 
             // 루프가 아니면 자연 종료에 맞춰 페이드아웃 예약
+            // (시작 지점/재생 지연을 고려해 남은 재생 시간 계산)
             if (!so.loop && so.fadeOut > 0f)
             {
-                float duration = source.clip.length / Mathf.Max(0.01f, Mathf.Abs(source.pitch));
+                float remaining = Mathf.Max(0f, source.clip.length - source.time);
+                float duration = remaining / Mathf.Max(0.01f, Mathf.Abs(source.pitch));
                 entry.HasScheduledFadeOut = true;
                 entry.FadeOutLength = Mathf.Min(so.fadeOut, duration);
-                entry.ScheduledFadeOutAt = now + Mathf.Max(0f, duration - entry.FadeOutLength);
+                entry.ScheduledFadeOutAt = now + so.playDelay + Mathf.Max(0f, duration - entry.FadeOutLength);
             }
 
-            source.Play();
+            // 재생 지연(C-⑤) 적용
+            if (so.playDelay > 0f)
+                source.PlayDelayed(so.playDelay);
+            else
+                source.Play();
 
             entry.Index = _active.Count;
             _active.Add(entry);
@@ -217,9 +268,9 @@ namespace csiimnida.CSILib.SoundManager.RunTime
             _currentBGM = null;
         }
 
-        private float ApplySettings(AudioSource source, SoundSo so, bool is3D)
+        private float ApplySettings(AudioSource source, SoundSo so, bool is3D, AudioClip clip)
         {
-            source.clip         = so.clip;
+            source.clip         = clip;
             source.loop         = so.loop;
             source.priority     = so.Priority;
             source.panStereo    = so.stereoPan;
@@ -227,17 +278,78 @@ namespace csiimnida.CSILib.SoundManager.RunTime
             source.minDistance  = so.minDistance;
             source.maxDistance  = so.maxDistance;
 
+            // 고급 설정: 일시정지 중에도 재생(D-⑧)
+            source.ignoreListenerPause = so.ignoreListenerPause;
+
             // SO 데이터를 직접 수정하지 않고 로컬 변수로 피치 계산
             float pitch = so.RandomPitch ? Random.Range(so.MinPitch, so.MaxPitch) : so.pitch;
             source.pitch = pitch;
 
-            float targetVolume = Mathf.Clamp01(so.volume);
+            float baseVolume = so.RandomVolume ? Random.Range(so.MinVolume, so.MaxVolume) : so.volume;
+            float targetVolume = Mathf.Clamp01(baseVolume);
             source.volume = targetVolume;
 
-            if (pitch < 0f && source.clip.length > 0f)
-                source.time = source.clip.length - 0.01f;
+            float len = source.clip != null ? source.clip.length : 0f;
+            if (pitch < 0f && len > 0f)
+            {
+                source.time = len - 0.01f;
+            }
+            else if (len > 0f)
+            {
+                float maxStart = Mathf.Max(0f, len - 0.01f);
+                float start = Mathf.Clamp(so.startOffset, 0f, maxStart);
+                // 랜덤 시작 지점(A-②): 시작 지점 ~ 클립 끝 사이 임의 위치
+                if (so.randomStartPosition)
+                    start = Random.Range(start, maxStart);
+                if (start > 0f)
+                    source.time = start;
+            }
 
             return targetVolume;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // 보이스 제한 / 스틸
+        // ════════════════════════════════════════════════════════════
+        private int CountVoices(string soundName)
+        {
+            int count = 0;
+            for (int i = 0; i < _active.Count; i++)
+            {
+                ActiveSound e = _active[i];
+                if (e.Source != null && !e.FadingOut && e.SoundName == soundName)
+                    count++;
+            }
+            return count;
+        }
+
+        /// <summary>maxVoices 한도 내에서 재생 슬롯을 확보합니다. 필요 시 규칙에 따라 기존 보이스를 끊습니다.</summary>
+        private bool TryMakeRoomForVoice(string soundName, SoundSo so)
+        {
+            if (CountVoices(soundName) < so.maxVoices) return true;
+            if (so.voiceSteal == VoiceStealMode.Skip) return false;
+
+            ActiveSound victim = null;
+            for (int i = 0; i < _active.Count; i++)
+            {
+                ActiveSound e = _active[i];
+                if (e.Source == null || e.FadingOut || e.SoundName != soundName) continue;
+
+                if (victim == null)
+                {
+                    victim = e;
+                    continue;
+                }
+
+                bool better = so.voiceSteal == VoiceStealMode.Oldest
+                    ? e.Id < victim.Id                       // 더 작은 Id = 더 오래됨
+                    : e.Source.volume < victim.Source.volume; // 더 조용함
+                if (better) victim = e;
+            }
+
+            if (victim == null) return false;
+            FinishActive(victim);
+            return true;
         }
 
         // ════════════════════════════════════════════════════════════

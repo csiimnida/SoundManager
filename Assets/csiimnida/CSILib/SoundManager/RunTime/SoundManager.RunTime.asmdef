@@ -2,7 +2,8 @@
     "name": "SoundManager.RunTime",
     "rootNamespace": "",
     "references": [
-        "DependencyAssembly"
+        "DependencyAssembly",
+        "MonoSingleton.RunTime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

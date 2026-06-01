@@ -13,12 +13,11 @@ namespace csiimnida.CSILib.SoundManager.Editor
 
     public class SoundListEditor : EditorWindow
     {
-        // 패키지 내부 파일(UXML/USS) 경로 — 업데이트로 갱신되어도 무관
+        // 패키지 내부 UXML 경로 — 업데이트로 갱신되어도 무관
         private string _packageRootPath;
 
         private VisualTreeAsset visualTreeAsset;
         private VisualTreeAsset sounditemAsset;
-        private StyleSheet themeStyle;
 
         private UnityEditor.Editor _cachedEditor;
         private SoundListSo soundListSo;
@@ -36,6 +35,7 @@ namespace csiimnida.CSILib.SoundManager.Editor
         // 설정 탭 요소
         private TextField _dataPathField;
         private Label _toast;
+        private SoundManagerSceneSettingsPanel _sceneSettingsPanel;
 
         // ── 메뉴 진입점 ─────────────────────────────────────────────
 
@@ -55,7 +55,6 @@ namespace csiimnida.CSILib.SoundManager.Editor
             InitializeWindow();
 
             VisualElement root = rootVisualElement;
-            if (themeStyle != null) root.styleSheets.Add(themeStyle);
             visualTreeAsset.CloneTree(root);
 
             BindElements(root);
@@ -63,6 +62,7 @@ namespace csiimnida.CSILib.SoundManager.Editor
             ApplyTranslations();
 
             LoadSoundListSO();
+            RefreshSceneSettingsPanel();
             GeneratePoolItems();
             ShowTab(true);
         }
@@ -71,29 +71,87 @@ namespace csiimnida.CSILib.SoundManager.Editor
 
         private void BindElements(VisualElement root)
         {
+            VisualElement topbar = root.Q<VisualElement>("Topbar");
+            if (topbar != null)
+            {
+                topbar.style.flexShrink = 0;
+                topbar.style.height = 30;
+                topbar.style.minHeight = 30;
+            }
+
+            VisualElement tabBar = root.Q<VisualElement>("TabBar");
+            if (tabBar != null)
+            {
+                tabBar.style.flexShrink = 0;
+                tabBar.style.height = 28;
+                tabBar.style.minHeight = 28;
+            }
+
             _createBtn = root.Q<Button>("CreateBtn");
             _createBtn.clicked += HandleCreateBtn;
+            _createBtn.style.width = 28;
+            _createBtn.style.minWidth = 28;
+            _createBtn.style.maxWidth = 28;
+            _createBtn.style.height = 22;
+            _createBtn.style.minHeight = 22;
+            _createBtn.style.flexShrink = 0;
 
             _langBtn = root.Q<Button>("LenBtn");
             _langBtn.clicked += HandleLangBtn;
+            _langBtn.style.width = 92;
+            _langBtn.style.minWidth = 92;
+            _langBtn.style.maxWidth = 92;
+            _langBtn.style.height = 22;
+            _langBtn.style.minHeight = 22;
+            _langBtn.style.flexShrink = 0;
 
             _tabSoundsBtn   = root.Q<Button>("TabSounds");
             _tabSettingsBtn = root.Q<Button>("TabSettings");
             _tabSoundsBtn.clicked   += () => ShowTab(true);
             _tabSettingsBtn.clicked += () => ShowTab(false);
+            _tabSoundsBtn.style.flexGrow = 1;
+            _tabSoundsBtn.style.flexBasis = 0;
+            _tabSoundsBtn.style.minWidth = 120;
+            _tabSoundsBtn.style.height = 22;
+            _tabSoundsBtn.style.minHeight = 22;
+            _tabSettingsBtn.style.flexGrow = 1;
+            _tabSettingsBtn.style.flexBasis = 0;
+            _tabSettingsBtn.style.minWidth = 120;
+            _tabSettingsBtn.style.height = 22;
+            _tabSettingsBtn.style.minHeight = 22;
 
             _soundsTab     = root.Q<VisualElement>("SoundsTab");
             _settingsTab   = root.Q<ScrollView>("SettingsTab");
             _itemView      = root.Q<ScrollView>("ItemView");
             _inspectorView = root.Q<ScrollView>("InspectorView");
+            _soundsTab.style.minWidth = 0;
+            _soundsTab.style.overflow = Overflow.Hidden;
 
-            // 가로 스크롤바가 떴다 사라지며 레이아웃이 흔들리는 것을 방지
+            VisualElement leftPanel = root.Q<VisualElement>("LeftPanel");
+            if (leftPanel != null)
+            {
+                leftPanel.style.minWidth = 0;
+                leftPanel.style.overflow = Overflow.Hidden;
+            }
+            VisualElement rightPanel = root.Q<VisualElement>("RightPanel");
+            if (rightPanel != null)
+            {
+                rightPanel.style.minWidth = 0;
+                rightPanel.style.overflow = Overflow.Hidden;
+            }
+
             _itemView.mode = ScrollViewMode.Vertical;
             _itemView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            _itemView.verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible;
+            _itemView.contentContainer.style.width = Length.Percent(100);
+            _itemView.contentContainer.style.minWidth = 0;
             _inspectorView.mode = ScrollViewMode.Vertical;
             _inspectorView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            _inspectorView.verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible;
+            _inspectorView.contentContainer.style.minWidth = 0;
             _settingsTab.mode = ScrollViewMode.Vertical;
             _settingsTab.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            _settingsTab.verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible;
 
             _itemList = new List<SoundItemUI>();
         }
@@ -113,9 +171,18 @@ namespace csiimnida.CSILib.SoundManager.Editor
         {
             _soundsTab.style.display   = sounds ? DisplayStyle.Flex : DisplayStyle.None;
             _settingsTab.style.display = sounds ? DisplayStyle.None : DisplayStyle.Flex;
-            _tabSoundsBtn.EnableInClassList("sm-tab--active", sounds);
-            _tabSettingsBtn.EnableInClassList("sm-tab--active", !sounds);
+            SetTabActive(_tabSoundsBtn, sounds);
+            SetTabActive(_tabSettingsBtn, !sounds);
             _createBtn.style.display = sounds ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private static void SetTabActive(Button tab, bool active)
+        {
+            // Bold 전환은 텍스트 폭이 바뀌어 탭이 미세하게 밀릴 수 있어 색상만 변경한다.
+            tab.style.unityFontStyleAndWeight = FontStyle.Normal;
+            tab.style.backgroundColor = active
+                ? new Color(0.24f, 0.34f, 0.48f, 0.8f)
+                : StyleKeyword.Null;
         }
 
         // ════════════════════════════════════════════════════════════
@@ -145,7 +212,8 @@ namespace csiimnida.CSILib.SoundManager.Editor
             L10n.Toggle();
             ApplyTranslations();
             RebuildSettingsTab();
-            if (_selectedItem?.SoundItem != null) ReloadInspector();
+            _sceneSettingsPanel?.SyncSoundListToAllManagers();
+            GeneratePoolItems();
         }
 
         private void HandleItemSelect(SoundItemUI target)
@@ -213,21 +281,13 @@ namespace csiimnida.CSILib.SoundManager.Editor
 
         private void ShowEmptyList()
         {
-            var box = new VisualElement();
-            box.AddToClassList("sm-empty");
-            box.Add(MakeLabel(L10n.EmptyListTitle, "sm-empty__title"));
-            box.Add(MakeLabel(L10n.EmptyListBody, "sm-empty__body"));
-            _itemView.Add(box);
+            _itemView.Add(new HelpBox($"{L10n.EmptyListTitle}\n{L10n.EmptyListBody}", HelpBoxMessageType.Info));
         }
 
         private void ShowSelectPrompt()
         {
             _inspectorView.Clear();
-            var box = new VisualElement();
-            box.AddToClassList("sm-empty");
-            box.Add(MakeLabel("♪", "sm-empty__title"));
-            box.Add(MakeLabel(L10n.SelectPrompt, "sm-empty__body"));
-            _inspectorView.Add(box);
+            _inspectorView.Add(new HelpBox(L10n.SelectPrompt, HelpBoxMessageType.Info));
         }
 
         // ── 인스펙터 재로드 ──────────────────────────────────────────
@@ -241,6 +301,9 @@ namespace csiimnida.CSILib.SoundManager.Editor
 
             UnityEditor.Editor.CreateCachedEditor(_selectedItem.SoundItem, null, ref _cachedEditor);
             VisualElement inspectorContent = _cachedEditor.CreateInspectorGUI();
+            inspectorContent.style.width = Length.Percent(100);
+            inspectorContent.style.minWidth = 0;
+            inspectorContent.style.flexGrow = 1;
 
             var serializedObject = new SerializedObject(_selectedItem.SoundItem);
             inspectorContent.Bind(serializedObject);
@@ -265,12 +328,20 @@ namespace csiimnida.CSILib.SoundManager.Editor
             BuildSettingsTab();
         }
 
+        private void RefreshSceneSettingsPanel()
+            => _sceneSettingsPanel?.Refresh();
+
         private void BuildSettingsTab()
         {
             _settingsTab.Clear();
 
-            // ── 풀 ──────────────────────────────────────────────
-            var (poolCard, poolBody) = MakeSection(L10n.GroupPool, null);
+            _sceneSettingsPanel ??= new SoundManagerSceneSettingsPanel(
+                () => soundListSo,
+                () => { /* scene fields saved via SerializedObject */ });
+            _sceneSettingsPanel.Build(_settingsTab);
+
+            var poolFoldout = new Foldout { text = L10n.GroupPool, value = true };
+            poolFoldout.Add(new HelpBox(L10n.HintPool, HelpBoxMessageType.None));
 
             var poolSize = new IntegerField(L10n.LabelPoolSize) { value = SoundManagerPrefs.GetPoolSize() };
             poolSize.RegisterValueChangedCallback(evt =>
@@ -284,66 +355,53 @@ namespace csiimnida.CSILib.SoundManager.Editor
             autoExpand.RegisterValueChangedCallback(evt =>
                 PlayerPrefs.SetInt(SoundManagerPrefs.PoolAutoExpand, evt.newValue ? 1 : 0));
 
-            poolBody.Add(poolSize);
-            poolBody.Add(autoExpand);
-            AddHint(poolCard, L10n.HintPool);
-            _settingsTab.Add(poolCard);
+            poolFoldout.Add(poolSize);
+            poolFoldout.Add(autoExpand);
+            _settingsTab.Add(poolFoldout);
 
-            // ── 볼륨 ────────────────────────────────────────────
-            var (volCard, volBody) = MakeSection(L10n.GroupVolume, "sm-section__bar--fade");
-            volBody.Add(MakeVolumeRow(L10n.LabelMaster, SoundManagerPrefs.MasterVolume));
-            volBody.Add(MakeVolumeRow(L10n.LabelBGM,    SoundManagerPrefs.BGMVolume));
-            volBody.Add(MakeVolumeRow(L10n.LabelSFX,    SoundManagerPrefs.SFXVolume));
-            AddHint(volCard, L10n.HintVolume);
+            var volFoldout = new Foldout { text = L10n.GroupVolume, value = true };
+            volFoldout.Add(new HelpBox(L10n.HintVolume, HelpBoxMessageType.None));
+            volFoldout.Add(MakeVolumeRow(L10n.LabelMaster, SoundManagerPrefs.MasterVolume));
+            volFoldout.Add(MakeVolumeRow(L10n.LabelBGM, SoundManagerPrefs.BGMVolume));
+            volFoldout.Add(MakeVolumeRow(L10n.LabelSFX, SoundManagerPrefs.SFXVolume));
 
-            var volActions = new VisualElement();
-            volActions.style.flexDirection = FlexDirection.Row;
-            volActions.style.justifyContent = Justify.FlexEnd;
-            volActions.style.paddingRight = 13;
-            volActions.style.paddingTop = 2;
+            var volActions = new VisualElement
+            {
+                style = { flexDirection = FlexDirection.Row, justifyContent = Justify.FlexEnd, marginTop = 6 }
+            };
+            volActions.Add(new Button(ResetVolumes) { text = L10n.ResetBtn });
+            volActions.Add(new Button(SaveSettings) { text = L10n.SaveBtn });
+            volFoldout.Add(volActions);
 
-            var resetBtn = new Button(ResetVolumes) { text = L10n.ResetBtn };
-            resetBtn.AddToClassList("sm-btn"); resetBtn.AddToClassList("sm-btn--ghost");
-            var saveBtn = new Button(SaveSettings) { text = L10n.SaveBtn };
-            saveBtn.AddToClassList("sm-btn"); saveBtn.AddToClassList("sm-btn--primary");
-            volActions.Add(resetBtn);
-            volActions.Add(saveBtn);
-            volCard.Add(volActions);
+            _toast = new Label { style = { display = DisplayStyle.None, marginTop = 4 } };
+            volFoldout.Add(_toast);
+            _settingsTab.Add(volFoldout);
 
-            _toast = MakeLabel(string.Empty, "sm-toast");
-            volCard.Add(_toast);
-            _settingsTab.Add(volCard);
-
-            // ── 데이터 폴더 ─────────────────────────────────────
-            var (dataCard, dataBody) = MakeSection(L10n.GroupData, "sm-section__bar--3d");
-            var row = new VisualElement();
-            row.AddToClassList("sm-row");
-
-            _dataPathField = new TextField { value = SoundManagerConfig.DataPath, isDelayed = true };
-            _dataPathField.AddToClassList("sm-pathfield");
+            var dataFoldout = new Foldout { text = L10n.GroupData, value = true };
+            var pathRow = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            _dataPathField = new TextField(L10n.SettingsLabel) { value = SoundManagerConfig.DataPath, isDelayed = true };
+            _dataPathField.style.flexGrow = 1;
             _dataPathField.RegisterValueChangedCallback(evt => ApplyDataPathChange(evt.newValue));
 
             var browseBtn = new Button(BrowseDataFolder) { text = L10n.BrowseBtn };
-            browseBtn.AddToClassList("sm-btn"); browseBtn.AddToClassList("sm-btn--ghost");
-
-            row.Add(_dataPathField);
-            row.Add(browseBtn);
-            dataBody.Add(row);
-            _settingsTab.Add(dataCard);
+            pathRow.Add(_dataPathField);
+            pathRow.Add(browseBtn);
+            dataFoldout.Add(pathRow);
+            _settingsTab.Add(dataFoldout);
         }
 
         private VisualElement MakeVolumeRow(string label, string prefsKey)
         {
-            var row = new VisualElement();
-            row.AddToClassList("sm-vol");
+            var row = new VisualElement
+            {
+                style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginBottom = 4 }
+            };
 
-            var lab = MakeLabel(label, "sm-vol__label");
+            var lab = new Label(label) { style = { width = 72, flexShrink = 0 } };
 
             float initial = PlayerPrefs.GetFloat(prefsKey, SoundManagerPrefs.DefaultVolume);
-            var slider = new Slider(0f, 1f) { value = initial };
-            slider.AddToClassList("sm-vol__slider");
-
-            var valueLabel = MakeLabel(Mathf.RoundToInt(initial * 100f) + "%", "sm-vol__value");
+            var slider = new Slider(0f, 1f) { value = initial, style = { flexGrow = 1 } };
+            var valueLabel = new Label(Mathf.RoundToInt(initial * 100f) + "%") { style = { width = 40, flexShrink = 0 } };
 
             slider.RegisterValueChangedCallback(evt =>
             {
@@ -387,9 +445,8 @@ namespace csiimnida.CSILib.SoundManager.Editor
         {
             if (_toast == null) return;
             _toast.text = L10n.SavedToast;
-            _toast.EnableInClassList("sm-toast--show", true);
-            // 1.5초 뒤 사라지게
-            _toast.schedule.Execute(() => _toast.EnableInClassList("sm-toast--show", false)).StartingIn(1500);
+            _toast.style.display = DisplayStyle.Flex;
+            _toast.schedule.Execute(() => _toast.style.display = DisplayStyle.None).StartingIn(1500);
         }
 
         // ── 데이터 경로 ──────────────────────────────────────────────
@@ -418,65 +475,45 @@ namespace csiimnida.CSILib.SoundManager.Editor
             soundListSo = null;
             _selectedItem = null;
             LoadSoundListSO();
+            RefreshSceneSettingsPanel();
             GeneratePoolItems();
-        }
-
-        // ════════════════════════════════════════════════════════════
-        // 공통 UI 빌더
-        // ════════════════════════════════════════════════════════════
-
-        private (VisualElement card, VisualElement body) MakeSection(string title, string barModifier)
-        {
-            var card = new VisualElement();
-            card.AddToClassList("sm-section");
-
-            var header = new VisualElement();
-            header.AddToClassList("sm-section__header");
-            var bar = new VisualElement();
-            bar.AddToClassList("sm-section__bar");
-            if (!string.IsNullOrEmpty(barModifier)) bar.AddToClassList(barModifier);
-            header.Add(bar);
-            header.Add(MakeLabel(title, "sm-section__title"));
-            card.Add(header);
-
-            var body = new VisualElement();
-            body.AddToClassList("sm-section__body");
-            card.Add(body);
-
-            return (card, body);
-        }
-
-        private void AddHint(VisualElement card, string text)
-            => card.Add(MakeLabel(text, "sm-hint"));
-
-        private static Label MakeLabel(string text, string ussClass)
-        {
-            var l = new Label(text);
-            if (!string.IsNullOrEmpty(ussClass)) l.AddToClassList(ussClass);
-            return l;
         }
 
         // ── SoundListSO 로드/생성 ────────────────────────────────────
 
         private void LoadSoundListSO()
         {
-            if (soundListSo != null) return;
-
-            SoundManagerConfig.EnsureDataFolderExists();
-            soundListSo = AssetDatabase.LoadAssetAtPath<SoundListSo>(SoundManagerConfig.SoundListSOPath);
             if (soundListSo == null)
             {
-                Debug.LogWarning($"[SoundManager] SoundListSO not found at '{SoundManagerConfig.SoundListSOPath}'. Creating a new one.");
-                soundListSo = ScriptableObject.CreateInstance<SoundListSo>();
-                AssetDatabase.CreateAsset(soundListSo, SoundManagerConfig.SoundListSOPath);
-                AssetDatabase.SaveAssets();
+                SoundManagerConfig.EnsureDataFolderExists();
+                soundListSo = AssetDatabase.LoadAssetAtPath<SoundListSo>(SoundManagerConfig.SoundListSOPath);
+                if (soundListSo == null)
+                {
+                    Debug.LogWarning($"[SoundManager] SoundListSO not found at '{SoundManagerConfig.SoundListSOPath}'. Creating a new one.");
+                    soundListSo = ScriptableObject.CreateInstance<SoundListSo>();
+                    AssetDatabase.CreateAsset(soundListSo, SoundManagerConfig.SoundListSOPath);
+                    AssetDatabase.SaveAssets();
+                }
             }
+
+            RefreshSceneSettingsPanel();
         }
 
         // ── 생명주기 ────────────────────────────────────────────────
 
         private void OnEnable()          => ResetCachedEditor();
         private void OnBecameInvisible() => ResetCachedEditor();
+
+        private void OnDisable()
+        {
+            // 도메인 리로드/창 닫힘 시 임베드한 에디터를 확실히 정리해 댕글링 참조를 방지
+            ResetCachedEditor();
+            if (_cachedEditor != null)
+            {
+                DestroyImmediate(_cachedEditor);
+                _cachedEditor = null;
+            }
+        }
 
         private void ResetCachedEditor()
         {
@@ -500,9 +537,6 @@ namespace csiimnida.CSILib.SoundManager.Editor
             sounditemAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
                 $"{_packageRootPath}/Editor/UIS/SoundListUIs/SoundItemUI.uxml");
             Debug.Assert(sounditemAsset != null, "SoundItemUI.uxml is null");
-
-            themeStyle = AssetDatabase.LoadAssetAtPath<StyleSheet>(
-                $"{_packageRootPath}/Editor/UIS/SoundManagerTheme.uss");
         }
     }
 }
